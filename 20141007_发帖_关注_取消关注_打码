@@ -1,0 +1,544 @@
+Call 注册大漠
+
+//全局变量定义处
+Dim hwnd
+Dim windowpos(3)
+Dim tiezihangshu
+tiezihangshu = 6
+
+
+Call 初始化genymotion窗口()
+
+user = "worldpooh"
+pass = "!q2w3e4r"
+softid = "9613"
+
+
+
+leftPoint = Plugin.dc.GetInfo(user, pass)
+TracePrint leftPoint
+
+//Call 验证码打码接口()
+//ExitScript
+
+/**************************发帖********************************/
+Rem 开始发帖
+Delay 1000
+Call Plugin.Office.OpenXls("C:\9999.xls")
+Rem 重新开始
+Call 从任何页面进到首页()
+Call 从首页进入第一个部落()
+Delay 5000
+Call 点击发帖按钮()
+Delay 3000
+FindPic 0, 0, 438, 690, "C:\test_game_buluoqun_caojb\发帖页标签.bmp", 0.9, intX, intY
+If intX < 0 Then 
+    Call 消除弹出框()
+    Delay 2000
+    Call 取消关注当前部落群()
+    Goto 重新开始
+End If
+
+tznr = 读取指定行数据(tiezihangshu)
+tznrsz = Split(tznr, "|")
+bt = tznrsz(0)
+nr = tznrsz(1)
+TracePrint "标题：" & bt & " 内容:" & nr
+If bt = "" or nr = "" Then 
+    Call Plugin.Office.CloseXls()
+    Delay 1000
+    Goto 结束
+End If
+cc = 发帖页填充标题内容图片(bt, nr)
+Call 取消关注当前部落群()
+tiezihangshu = tiezihangshu + 1
+Call Plugin.Office.CloseXls()
+Goto 开始发帖
+
+
+ExitScript
+
+/************************关注******************************/
+Rem 开始关注
+Delay 1000
+Call Plugin.Office.OpenXls("C:\关注.xls")
+Call 从任何页面进到首页()
+Call 点击动态()
+Call 点击兴趣部落()
+Call 点击搜索框()
+Call 搜索部落()
+//183，189,
+Call 点击关注()
+//首次加关注弹出签到194,503
+tiezihangshu = tiezihangshu + 1
+Call Plugin.Office.CloseXls()
+Goto 开始关注
+
+
+
+/***************************取消关注**************************/
+Rem 开始取消
+Call 从任何页面进到首页()
+Call 点击动态()
+Call 点击兴趣部落()
+Call 点击我的()
+Delay 2000
+FindPic 0, 0, 438, 690, "C:\test_game_buluoqun_caojb\我关注的部落.bmp", 0.9, intX, intY
+TracePrint intX & "," & intY
+If intX < 0 Then 
+    Goto 结束
+End If
+//Call 点击我关注的第一个部落()
+Call 取消关注当前部落群()
+Goto 开始取消
+
+
+Rem 结束
+ExitScript 
+
+/**************************函数区*******************************/
+
+Sub 点击关注()
+
+    Delay 2000
+    //3种情况
+    //1.多个结果,先点搜索到的第一个结果，再关注
+    //2.结果唯一，直接关注
+    //3.没结果，暂时没考虑
+    
+    is_blqsy = 判断是否为特定部落群首页()
+    If is_blqsy < 0 Then 
+        
+        //186，231
+        Call 移动鼠标并点击(186,231)
+    End If
+    
+    Delay 2000
+    Call 移动鼠标并点击(183,189)
+    
+End Sub
+
+Sub 搜索部落()
+    
+    tznr = 读取指定行数据(tiezihangshu)
+    tznrsz = Split(tznr, "|")
+    bt = tznrsz(0)
+    If bt = "" Then 
+        Call Plugin.Office.CloseXls()
+        Goto 结束
+    End If
+    
+    Delay 500
+    dm.SetClipboard bt
+    Call 移动鼠标并点击(111, 133)
+    Delay 500
+    LeftClick 1
+    Delay 500
+    LeftClick 1
+    Delay 500
+    
+    //弹出粘贴按钮
+    i = 1
+    While i < 3
+        Delay 1000
+        LeftClick 1
+        Delay 1000
+        LeftDown 1
+        Delay 2500
+        LeftUp  1
+        Delay 500
+        i = i+1
+    Wend
+
+    Call 移动鼠标并点击(56,224)
+    
+    Delay 1000 
+    //没有搜索按钮，按Enter键进行搜索
+    KeyPress "Enter", 1
+
+End Sub
+
+
+
+/*****************************分割线数据内容*********************************************************/
+
+Sub 注册大漠
+    TracePrint "注册大漠"
+    PutAttachment ".\plugin","regdll.dll"
+    PutAttachment "C:\test_game_buluoqun_caojb","*.bmp"
+    PutAttachment "C:\test_game_buluoqun_caojb","*.txt"
+    PutAttachment "C:\test_game_buluoqun_caojb","dm.dll"
+    //↑PutAttachment释放附件
+    Call Plugin.RegDll.Reg("C:\test_game_buluoqun_caojb\dm.dll")
+    set dm = createobject("dm.dmsoft")
+    //↑大漠·注册
+    dm.SetPath "C:\test_game_buluoqun_caojb"
+    //↑指定“全局路径?
+    // dm.SetDict 0,"口袋通Dict.txt"
+    //   ↑字库
+    Delay 40
+End Sub
+
+Sub 绑定Genymotion()
+    TracePrint"绑定Genymotion"
+    hwnd = dm.findwindow("", "Genymotion for")
+    //  TracePrint hwnd
+    Call Plugin.Window.Active(hwnd)
+    dm_ret = dm.BindWindow(hwnd, "normal", "windows3", "normal", 0)
+    Delay 500
+    If dm_ret = 0 Then 
+        MsgBox "绑定失败1！！"
+        ExitScript 
+    End If
+    dm_ret = dm.GetClientSize(hwnd,w,h) 
+    //    TracePrint "宽度:" & w & ",高度:" & h
+    dm_ret = dm.GetWindowRect(hwnd, windowpos(0), windowpos(1), windowpos(2), windowpos(3))
+    //    TracePrint "x1-" & windowpos(0) & "y1-" & windowpos(1) & "x2-" & windowpos(2) & "y2-" & windowpos(3)
+    //调试代码获取相对位置
+    Delay 500
+    //LeftClick 1
+    GetCursorPos x, y
+    TracePrint "坐标到窗口起点位置的距离  " & "x：" & x - windowpos(0) & "   y：" & y - windowpos(1)
+End Sub
+
+
+
+
+Sub 初始化genymotion窗口()
+    TracePrint "初始化Genymotion"
+    Call 绑定Genymotion()
+    dm_ret = dm.GetClientSize(hwnd,w,h) 
+    //TracePrint "宽度:" & w & ",高度:" & h
+    dm_ret = dm.SetClientSize(hwnd, 438, 690)
+    dm.MoveWindow hwnd, 0, 0
+	
+End Sub
+
+Sub 从任何页面进到首页()
+    TracePrint "从任何页面进到首页"
+    Delay 2000
+    Rem 查找首页标志
+    FindPic 0, 0, 438, 690, "C:\test_game_buluoqun\首页图标_联系人.bmp", 0.9, intX, intY
+    FindPic 0,0,438,690,"C:\test_game_buluoqun\首页图标_联系人已点.bmp",0.9,intX1,intY1
+    If intX < 0 and intX1 < 0 Then 
+        Call 点击左上角按钮()
+        Goto 查找首页标志
+    End If
+End Sub
+
+
+Function 判断是否为特定部落群首页()
+    TracePrint "判断是否为特定部落群首页"
+    FindPic 0,0,438,690,"C:\test_game_buluoqun\发帖按钮.bmp",0.9,intX,intY
+    If intX> 0 And intY> 0 Then
+        判断是否为特定部落群首页 = 1
+        TracePrint "是特定部落群首页"
+    Else 
+        判断是否为特定部落群首页 = - 1 
+        TracePrint "不是特定部落群首页"
+    End If
+End Function
+
+Sub 消除弹出框()
+    TracePrint "消除弹出框"
+    x1 = 200
+    y1 = 400
+	
+    //起点windowpos(0)+253， windowpos(1)+247
+    //直到windowpos(1)+509
+    Rem 弹出框
+    Call 移动鼠标并点击(x1,y1)
+    y1 = y1 + 15
+    Delay 2000
+    a = 判断是否为特定部落群首页()
+    If a < 0 Then 
+        Goto 弹出框
+    End If
+End Sub
+
+//343,138
+Sub 取消关注当前部落群()
+    TracePrint "取消关注当前部落群"
+    Call 从任何页面进到首页()
+    Call 从首页进入第一个部落()
+    
+    Delay 3000
+    //部落头像
+    Call 移动鼠标并点击(63, 163)
+    //取消关注按钮
+    Call 移动鼠标并点击(205,402)
+End Sub
+
+
+
+//文件相关操作
+Function 读取指定行数据(i)
+    TracePrint "读取指定行数据"
+    bt = Plugin.Office.ReadXls(1,i, 1)
+    nr = Plugin.Office.ReadXls(1,i, 2)
+    读取指定行数据 = bt & "|" & nr
+    TracePrint 读取指定行数据
+End Function
+
+
+//填充发帖页标题，内容
+Function 发帖页填充标题内容图片(bt, nr)
+    //复制bt内容
+    TracePrint "发帖页填充标题内容"
+    Delay 500
+    dm.SetClipboard bt
+    Call 移动鼠标并点击(127,138)
+    Delay 500
+    LeftClick 1
+    Delay 500
+    LeftClick 1
+    Delay 500
+    
+    //弹出粘贴按钮
+    i = 1
+    While i < 3
+        Delay 1000
+        LeftClick 1
+        Delay 1000
+        LeftDown 1
+        Delay 2500
+        LeftUp  1
+        Delay 500
+        i = i+1
+    Wend
+
+    MoveTo windowpos(0) + 43, windowpos(1) + 96
+    Delay 200
+    LeftClick 1
+
+    //复制帖子内容
+    Delay 500
+    dm.SetClipboard nr
+    Call 移动鼠标并点击(88,204)
+    Delay 500
+    LeftClick 1
+    Delay 500
+    LeftClick 1
+    Delay 500
+    
+  
+    //弹出粘贴按钮
+    i = 1
+    While i < 3
+        Delay 1000
+        LeftClick 1
+        Delay 1000
+        LeftDown 1
+        Delay 2500
+        LeftUp  1
+        Delay 500
+        i= i+1
+    Wend
+
+    MoveTo windowpos(0) + 43, windowpos(1) + 155
+    Delay 200
+    LeftClick 1
+	
+    Call 添加图片并点确定()
+	
+    Call 移动鼠标并点击(366, 85)
+    
+    Delay 8000
+        //验证是否要调用打码平台
+    FindPic 0,0,1366,768,"C:\test_game_buluoqun\验证码弹出窗.bmp",0.9,intX,intY
+	If intX > 0 And intY > 0 Then 
+		
+		call 循环打码3次()
+	End If
+    
+    Delay 15000
+
+End Function
+
+
+
+Sub 添加图片并点确定()
+    //点添加按钮
+    Call 移动鼠标并点击(69,366)
+    
+    //点相册选择
+    Call 移动鼠标并点击(215, 578)
+    
+    Delay 3000
+    //点照片1
+    Call 移动鼠标并点击(75,168)
+    
+    //点照片2
+    Call 移动鼠标并点击(200,168)
+    
+    //点确定
+    Call 移动鼠标并点击(333,638)
+    Delay 2000
+	
+    id = dm.Play("D:\music\Canon.mp3")
+    Delay 10000
+    dm.Stop id
+
+	
+End Sub
+
+
+
+/****************分割线********************************************/
+Sub 移动鼠标并点击(x, y)
+    Delay 2000
+    MoveTo windowpos(0) + x, windowpos(1) + y
+    Delay 500
+    LeftClick 1
+End Sub
+
+Sub 点击动态()
+    TracePrint "点击动态"
+    Call 移动鼠标并点击(330,626)
+End Sub
+
+Sub 点击兴趣部落()
+    TracePrint "点击兴趣部落"
+    Call 移动鼠标并点击(329,150)
+End Sub
+
+Sub 点击我的()
+    TracePrint "点击我的"
+    Call 移动鼠标并点击(255,182)
+End Sub
+
+Sub 点击我关注的第一个部落()
+    TracePrint "点击我关注的第一个部落"
+    Call 移动鼠标并点击(198,370)
+End Sub
+
+Sub 点击搜索框()
+    TracePrint "点击搜索框"
+    Call 移动鼠标并点击(111, 133)
+End Sub
+
+Sub 点击左上角按钮()
+    TracePrint "点击左上角按钮"
+    Call 移动鼠标并点击(40,80)
+End Sub
+
+Sub 点击发帖按钮()
+    TracePrint "点击发帖按钮"
+    Call 移动鼠标并点击(198,633)
+End Sub
+
+Sub 从首页进入第一个部落()
+    Call 点击动态()
+    Call 点击兴趣部落()
+    Delay 3000
+    Call 点击我的()
+    Call 点击我关注的第一个部落()
+End Sub
+
+
+/*************************打码平台相关函数*******************************************/
+
+Sub 弹出粘贴框()
+	i = 1
+	While i < 3
+		Delay 1000
+   	 	LeftClick 1
+    	Delay 1000
+    	LeftDown 1
+		Delay 2000
+		LeftUp  1
+		Delay 200
+		i= i+1
+	Wend
+End Sub
+
+
+Function 验证码打码接口()
+	TracePrint "验证码打码接口"
+	Delay 1000
+		Re = Plugin.dc.RecvArea(0,windowpos (0) + 61,windowpos(1) + 217,93,45,user,pass,softid)
+		ResultArray = Split(Re, "|")
+		If UBound(ResultArray) > 0 Then 
+			Vcode = ResultArray(0)
+			imageID = ResultArray(2)
+			验证码打码接口 = imageID
+			TracePrint "验证码:" & Vcode
+			TracePrint "验证码ID" & imageID
+			dm.SetClipboard Vcode
+			Delay 1000
+			MoveTo windowpos(0) + 239, windowpos(1) + 238
+			
+			Call 弹出粘贴框()
+			
+			FindPic 0, 0, 438, 690, "C:\test_game_buluoqun_caojb\验证码粘贴位置.bmp", 0.9, intX, intY
+			FindPic 0, 0, 438, 690, "C:\test_game_buluoqun_caojb\验证码粘贴位置2.bmp", 0.9, intX1, intY1
+			If intX > 0 Then 
+				MoveTo intX , intY
+				Delay 500
+				LeftClick 1
+				Delay 500
+			Else 
+				If intX1 > 0 Then 
+					MoveTo intX1 , intY1
+					Delay 500
+					LeftClick 1
+					Delay 500
+				End If
+			End If
+			
+			If intX > 0 or intX1 > 0 Then 
+				MoveTo intX , intY
+				Delay 500
+				LeftClick 1
+				Delay 500
+			End If
+			
+
+
+			Delay 1000
+			MoveTo windowpos(0) + 185, windowpos(1) + 297
+			Delay 500
+			LeftClick 1
+			Delay 500
+								
+		Else 
+			//MsgBox "识别失败:" + Re//Re返回失败原因
+			TracePrint "识别失败:" & Re//Re返回失败原因
+		End If
+
+	 
+End Function
+
+
+Function 判断打码是否成功(imageid)
+	TracePrint "判断打码是否成功"
+	Delay 1000
+	FindPic 0, 0, 438, 690, "C:\test_game_buluoqun\验证码错误提示.bmp", 0.9, intX, intY
+	If intX > 0 And intY > 0 Then 
+		TracePrint "打码失败，通知服务器防止多计费"
+		re = Plugin.dc.ReportErr(user,imageid)
+		
+		//点击确定按钮，重新打码
+		//cxsryzm = 指定相对位置左键单击(137, 271)
+		call 移动鼠标并点击(137,271)
+		判断打码是否成功 = -1
+		
+	Else 
+		判断打码是否成功 = 1
+		
+	End If
+	
+End Function
+
+
+Sub 循环打码3次()
+	TracePrint "循环打码3次"
+	dmnum = 1
+	Rem dmxunhuan
+	imageid = 验证码打码接口()
+	booldm = 判断打码是否成功(imageid)
+	If booldm < 0 and dmnum < 4 Then 
+		dmnum = dmnum + 1
+		Goto dmxunhuan
+	End If
+End Sub
